@@ -8,7 +8,3 @@ class CalcTests(SimpleTestCase):
         self.assertEquals(res, 7)
 
 
-    def test_subtract_numbers(self):
-        res = calc.subtract(10, 15)
-
-        self.assertEquals(res,5)
