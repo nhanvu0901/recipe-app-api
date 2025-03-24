@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from core.models import Recipe
 from recipe import serializers
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class RecipeViewSet(viewsets.ModelViewSet):# When you need a complete set of CRUD operations for a resource
     """View for manage recipe APIs."""
     serializer_class = serializers.RecipeSerializer
 

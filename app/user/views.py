@@ -1,16 +1,27 @@
-from rest_framework import generics
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.settings import api_settings
 from rest_framework import generics, authentication, permissions
-
-from user.serializers import (
-    UserSerializer,
-    AuthTokenSerializer,
-)
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token  # Add this import
+from rest_framework.response import Response
+from rest_framework.settings import api_settings
+from user.serializers import UserSerializer, AuthTokenSerializer
 
 class CreateUserView(generics.CreateAPIView):
     """Create a new user in the system."""
     serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        # Validate and create the user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()  # This calls UserSerializer.create()
+
+        # Generate a token for the new user
+        token, created = Token.objects.get_or_create(user=user)
+
+        # Prepare response with user data and token
+        data = serializer.data
+        data['token'] = token.key
+        return Response(data, status=201)  # 201 = Created
 
 
 class CreateTokenView(ObtainAuthToken):
@@ -19,7 +30,9 @@ class CreateTokenView(ObtainAuthToken):
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
 
 
-class ManageUserView(generics.RetrieveUpdateAPIView):
+
+
+class ManageUserView(generics.RetrieveUpdateAPIView):# When you need specific, limited operations on a resource
     """Manage the authenticated user."""
     serializer_class = UserSerializer
     #        * Người dùng gửi Token kèm theo yêu cầu HTTP (trong phần tiêu đề - headers).
