@@ -23,6 +23,12 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError('User must have email address')
 
+        email = self.normalize_email(email)
+
+        if self.filter(email=email).exists():
+            raise ValueError('A user with this email address already exists')
+
+
        # The self.model attribute in UserManager refers to the User model because UserManager is assigned to the User model’s objects attribut
         user = self.model(email= self.normalize_email(email), **extra_fields)
         user.set_password(password)
