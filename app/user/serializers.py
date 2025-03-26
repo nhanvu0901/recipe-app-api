@@ -1,4 +1,8 @@
 # Chuyển dữ liệu từ cơ sở dữ liệu (như các đối tượng Django model) thành JSON hoặc các định dạng khác mà API có thể trả về cho client.å
+# cầu nối giữa model (dữ liệu trong database) và API
+
+#database  ----- serializer ----- view ------- api call
+
 from django.contrib.auth import (
     get_user_model,
     authenticate,
@@ -6,7 +10,9 @@ from django.contrib.auth import (
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
-
+#DRF generates the fields automatically based on the model’s fields
+# Structured around the Meta class, which links it to a model.
+# Includes built-in create() and update() methods for model instances (which you can override)
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for the user object."""
 
@@ -30,6 +36,11 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
+
+#Serializer
+#Minimal structure: Just fields and optional methods like validate().
+#No Meta class because it doesn’t need model metadata.
+#Use when you’re working with non-model data or custom structures (e.g., login forms, API payloads not tied to a single model).
 class AuthTokenSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(
@@ -45,6 +56,7 @@ class AuthTokenSerializer(serializers.Serializer):
             email=email,
             password=password,
         )
+
         if not user:
             msg = _('Unable to authenticate with provided credentials.')
             # cách phổ biến để raise error , view sẽ chuyển thành 400 bad request

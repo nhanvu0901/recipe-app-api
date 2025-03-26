@@ -8,7 +8,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     # serializers.ModelSerializer provides a shortcut that automatically creates fields based on the model
     class Meta:
         model = Recipe
-        fields = ['id', 'title', 'time_minutes', 'price', 'link']
+        fields = ['id', 'title', 'time_minutes', 'price', 'link','description']
         read_only_fields = ['id']
 
 

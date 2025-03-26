@@ -1,11 +1,12 @@
-from rest_framework import generics, authentication, permissions
+from rest_framework import generics, authentication, permissions, status
+from rest_framework.views import APIView
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token  # Add this import
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from user.serializers import UserSerializer, AuthTokenSerializer
 
-class CreateUserView(generics.CreateAPIView):
+class CreateUserView(generics.CreateAPIView):#Dùng để tạo user POST
     """Create a new user in the system."""
     serializer_class = UserSerializer
 
@@ -23,15 +24,7 @@ class CreateUserView(generics.CreateAPIView):
         data['token'] = token.key
         return Response(data, status=201)  # 201 = Created
 
-
-class CreateTokenView(ObtainAuthToken):
-    """Create a new auth token for user."""
-    serializer_class = AuthTokenSerializer
-    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
-
-
-
-
+#Dùng để Retrieve or update the authenticated user GET /PUT /PATCH
 class ManageUserView(generics.RetrieveUpdateAPIView):# When you need specific, limited operations on a resource
     """Manage the authenticated user."""
     serializer_class = UserSerializer
@@ -47,3 +40,24 @@ class ManageUserView(generics.RetrieveUpdateAPIView):# When you need specific, l
         """Retrieve and return the authenticated user."""
         print(f'GET Object: {self.request.user}')
         return self.request.user
+
+
+class CreateTokenView(APIView):
+    """Create a new auth token for user."""
+    serializer_class = AuthTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)#trigger the validate method of AuthTokenSerializer
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        request_info = {
+            'method': request.method,
+            'path': request.path,
+            'data': request.data,
+        }
+        return Response({'token': token.key,**request_info}, status=status.HTTP_201_CREATED)
+
+
+
+
