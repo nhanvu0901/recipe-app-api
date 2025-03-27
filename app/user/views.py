@@ -3,10 +3,11 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token  # Add this import
 from rest_framework.response import Response
-from rest_framework.settings import api_settings
+from rest_framework_simplejwt.tokens import RefreshToken
 from user.serializers import UserSerializer, AuthTokenSerializer
 
-class CreateUserView(generics.CreateAPIView):#Dùng để tạo user POST
+
+class CreateUserView(generics.CreateAPIView):  # Dùng để tạo user POST
     """Create a new user in the system."""
     serializer_class = UserSerializer
 
@@ -24,19 +25,28 @@ class CreateUserView(generics.CreateAPIView):#Dùng để tạo user POST
         data['token'] = token.key
         return Response(data, status=201)  # 201 = Created
 
-#Dùng để Retrieve or update the authenticated user GET /PUT /PATCH
-class ManageUserView(generics.RetrieveUpdateAPIView):# When you need specific, limited operations on a resource
+
+# Dùng để Retrieve or update the authenticated user GET /PUT /PATCH
+class ManageUserView(generics.RetrieveUpdateAPIView):  # When you need specific, limited operations on a resource
     """Manage the authenticated user."""
     serializer_class = UserSerializer
     #        * Người dùng gửi Token kèm theo yêu cầu HTTP (trong phần tiêu đề - headers).
     #       * Hệ thống xác minh token này để đảm bảo rằng người dùng đã đăng nhập hợp lệ.
     authentication_classes = [authentication.TokenAuthentication]
-    #Lớp quyền này (IsAuthenticated) đảm bảo rằng chỉ những người dùng đã xác thực mới có thể truy cập endpoint này.
+    # Lớp quyền này (IsAuthenticated) đảm bảo rằng chỉ những người dùng đã xác thực mới có thể truy cập endpoint này.
     permission_classes = [permissions.IsAuthenticated]
 
-    #>< get_queryset ta override hàm get_object() để trả về đối tượng người dùng hiện tại (self.request.user)
-    def get_object(self):
-        #khi mà view gọi đến để lấy user thì nó sẽ qua hàm này
+    def initial(self, request, *args, **kwargs):
+        # This runs before get_object() or any HTTP method handler
+        print(f"Request headers: {request.headers}")
+        print(f"Raw token from header: {request.headers.get('Authorization')}")
+        print(f"Authenticated user: {request.user}")
+        print(f"Is authenticated? {request.user.is_authenticated}")
+        return super().initial(request, *args, **kwargs)
+
+    # >< get_queryset ta override hàm get_object() để trả về đối tượng người dùng hiện tại (self.request.user)
+    def get_object(self, request):
+        # khi mà view gọi đến để lấy user thì nó sẽ qua hàm này
         """Retrieve and return the authenticated user."""
         print(f'GET Object: {self.request.user}')
         return self.request.user
@@ -48,16 +58,19 @@ class CreateTokenView(APIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)#trigger the validate method of AuthTokenSerializer
+        serializer.is_valid(raise_exception=True)  # trigger the validate method of AuthTokenSerializer
         user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
+
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        Token.objects.create(user=user)
+
         request_info = {
             'method': request.method,
             'path': request.path,
             'data': request.data,
         }
-        return Response({'token': token.key,**request_info}, status=status.HTTP_201_CREATED)
-
-
-
-
+        return Response({'access': access_token,
+                         'refresh': refresh_token, **request_info}, status=status.HTTP_201_CREATED)
