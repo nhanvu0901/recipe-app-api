@@ -55,6 +55,23 @@ class User(AbstractBaseUser,PermissionsMixin):
 
     USERNAME_FIELD = 'email'
 
+
+class CustomToken(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    access_token = models.TextField()
+    refresh_token = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    tokenExpiredTime = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return {
+            'access_token': self.access_token,
+            'refresh_token': self.refresh_token,
+            'created': self.created.isoformat(),
+            'user': self.user.email,
+            'tokenExpiredTime': self.tokenExpiredTime.isoformat(),
+        }
+
 class Recipe(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
