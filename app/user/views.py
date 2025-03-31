@@ -32,7 +32,7 @@ class CreateUserView(generics.CreateAPIView):  # Dùng để tạo user POST
 
 
 # Dùng để Retrieve or update the authenticated user GET /PUT /PATCH
-class ManageUserView(generics.RetrieveUpdateAPIView):  # When you need specific, limited operations on a resource
+class ManageUserView(generics.RetrieveAPIView):  # When you need specific, limited operations on a resource
     """Manage the authenticated user."""
     serializer_class = UserSerializer
     #        * Người dùng gửi Token kèm theo yêu cầu HTTP (trong phần tiêu đề - headers).
