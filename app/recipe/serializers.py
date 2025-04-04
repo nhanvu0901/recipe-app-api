@@ -11,4 +11,17 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'time_minutes', 'price', 'link','description']
         read_only_fields = ['id']
 
+    def create(self, validated_data):
+        print(validated_data)
+        user = validated_data['owner']
+        Recipe.objects.create(
+            title=validated_data['title'],
+            user=user,
+            description=validated_data['description'],
+            time_minutes=validated_data['time_minutes'],
+            price=validated_data['price'],
+        )
+        del validated_data['owner']
+        return validated_data
+
 

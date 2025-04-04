@@ -1,6 +1,7 @@
 # Chuyển dữ liệu từ cơ sở dữ liệu (như các đối tượng Django model) thành JSON hoặc các định dạng khác mà API có thể trả về cho client.å
 # cầu nối giữa model (dữ liệu trong database) và API
-
+from datetime import timedelta
+from django.utils import timezone
 #database  ----- serializer ----- view ------- api call
 
 from django.contrib.auth import (
@@ -9,6 +10,10 @@ from django.contrib.auth import (
 )
 from django.utils.translation import gettext as _
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from core.models import CustomToken
+
 
 #DRF generates the fields automatically based on the model’s fields
 # Structured around the Meta class, which links it to a model.
@@ -64,3 +69,19 @@ class AuthTokenSerializer(serializers.Serializer):
         print(f"user: {user.password}")
         attrs['user'] = user
         return attrs
+
+    def create(self, validated_data):
+        user = validated_data['user']
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        # Calculate expiration time based on ACCESS_TOKEN_LIFETIME
+        expiration_time = timezone.now() + timedelta(minutes=60)  # Match SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
+        CustomToken.objects.create(
+            user=user,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            tokenExpiredTime=expiration_time
+        )
+        return access_token, refresh_token, expiration_time

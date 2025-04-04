@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from core.models import CustomToken
 from user.authentication import CustomJWTAuthentication
 from user.serializers import UserSerializer, AuthTokenSerializer
-from django.utils import timezone
+
 from datetime import timedelta
 
 
@@ -65,22 +65,8 @@ class CreateTokenView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)  # trigger the validate method of AuthTokenSerializer
-        user = serializer.validated_data['user']
 
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        refresh_token = str(refresh)
-
-        # Calculate expiration time based on ACCESS_TOKEN_LIFETIME
-        expiration_time = timezone.now() + timedelta(minutes=5)  # Match SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
-
-        # Optionally save the access token to authtoken_token
-        custom_token = CustomToken.objects.create(
-            user=user,
-            access_token=access_token,
-            refresh_token=refresh_token,
-            tokenExpiredTime=expiration_time
-        )
+        access_token, refresh_token, expiration_time = serializer.save()# call the create method
 
         request_info = {
             'method': request.method,
@@ -88,5 +74,5 @@ class CreateTokenView(APIView):
             'data': request.data,
         }
         return Response({'access': access_token,
-                         'refresh': refresh_token, 'tokenExpiredTime': custom_token.tokenExpiredTime.isoformat(),
+                         'refresh': refresh_token, 'tokenExpiredTime': expiration_time.isoformat(),
                          **request_info}, status=status.HTTP_201_CREATED)
